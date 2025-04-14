@@ -1,7 +1,7 @@
 const asyncHandler = require("express-async-handler");
-const User = require('../models/User');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const User = require("../models/User");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const HttpError = require("../models/http-error");
 const { validationResult } = require("express-validator");
 const { generateToken } = require("../utils/generateToken");
@@ -35,7 +35,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
     genre_prefere,
   });
 
-  // Generate token 
+  // Generate token
   generateToken(res, newUser._id);
 
   // Send success response
@@ -47,8 +47,8 @@ const registerUser = asyncHandler(async (req, res, next) => {
       email: newUser.email,
       d_ness: newUser.d_ness,
       genre_prefere: newUser.genre_prefere,
-      role: newUser.role
-    }
+      role: newUser.role,
+    },
   });
 });
 
@@ -59,8 +59,8 @@ const loginUser = asyncHandler(async (req, res, next) => {
   const { email, mot_de_passe } = req.body;
 
   // Find user by email
-  const user = await User.findOne({ email });
-  if (!user || !(await bcrypt.compare(mot_de_passe, user.mot_de_passe))) {
+  const user = await User.findOne({ email }).select("+mot_de_passe");
+  if (!user || !(await user.matchPassword(mot_de_passe))) {
     return next(new HttpError("Invalid credentials", 401));
   }
 
@@ -74,8 +74,8 @@ const loginUser = asyncHandler(async (req, res, next) => {
       email: user.email,
       d_ness: user.d_ness,
       genre_prefere: user.genre_prefere,
-      role: user.role
-    }
+      role: user.role,
+    },
   });
 });
 
@@ -83,7 +83,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
 // @route   GET /api/users/profile
 // @access  Private
 const getUserProfile = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user._id).select('-mot_de_passe');
+  const user = await User.findById(req.user._id).select("-mot_de_passe");
   if (!user) {
     return next(new HttpError("User not found", 404));
   }
@@ -93,5 +93,5 @@ const getUserProfile = asyncHandler(async (req, res, next) => {
 module.exports = {
   registerUser,
   loginUser,
-  getUserProfile
+  getUserProfile,
 };
